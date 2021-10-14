@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mapper">
+
+	<resultMap type="map" id="maplist">
+		<result column="seq" property="seq"/>	
+		<result column="mem_id" property="memId"/>	
+		<result column="mem_name" property="memName"/>	
+		<result column="board_subject" property="boardSubject"/>	
+		<result column="board_content" property="boardContent"/>	
+		<result column="reg_date" property="regDate"/>	
+		<result column="upt_date" property="uptDate"/>	
+		<result column="view_cnt" property="viewCnt"/>	
+	</resultMap>
+
+	<select id="list" resultMap="maplist" parameterType="map">
+		select
+  				SEQ
+				,MEM_NAME
+				,MEM_ID
+				,BOARD_SUBJECT
+				,BOARD_CONTENT
+				,REG_DATE
+				,UPT_DATE
+				,VIEW_CNT
+			from board_study
+	</select>
+
+
+	<select id="search" resultMap="maplist" parameterType="map">
+  			select
+  				rnum
+  				,SEQ
+				,MEM_NAME
+				,MEM_ID
+				,BOARD_SUBJECT
+				,BOARD_CONTENT
+				,REG_DATE
+				,UPT_DATE
+				,VIEW_CNT
+			from (
+	  			select
+	  				row_number() over(order by seq desc) rnum
+	  				,SEQ
+					,MEM_NAME
+					,MEM_ID
+					,BOARD_SUBJECT
+					,BOARD_CONTENT
+					,REG_DATE
+					,UPT_DATE
+					,VIEW_CNT
+				from board_study
+				where 1=1
+				<if test="searchType != null and searchType != ''"> 
+					and ${searchType} like '%'||#{searchTxt}||'%'
+				</if>
+				<if test="stDate != null and stDate != ''">
+					and to_char(reg_date, 'yyyy-MM-dd') between  #{stDate} and #{endDate}
+				</if>
+			)where rnum between (#{pageNo} * #{listSize}) - #{listSize} + 1 and #{pageNo} * #{listSize}
+  		</select>
+	
+	
+		<insert id="insert" parameterType="map">
+  			insert into board_study
+  			(
+  				SEQ
+				,MEM_NAME
+				,MEM_ID
+				,BOARD_SUBJECT
+				,BOARD_CONTENT
+				,REG_DATE
+				,VIEW_CNT
+  			)values(
+  				#{seq}
+				,#{name}
+				,#{id}
+				,#{subject}
+				,#{content}
+				,sysdate
+				,0
+  				
+  			)
+  			
+  		</insert>
+
+		<insert id="fileInsert" parameterType="map">
+  		
+<!--   			FILE_SEQ -->
+<!-- 			REAL_NAME -->
+<!-- 			SAVE_NAME -->
+<!-- 			REG_DATE -->
+<!-- 			SAVE_PATH -->
+<!-- 			LIST_SEQ -->
+
+  			insert into file_study_table 
+  			values (
+  				(select nvl(max(file_seq), 0)+1 from file_study_table)
+  				,#{REAL_NAME}
+  				,#{SAVE_NAME}
+  				,sysdate
+  				,#{SAVE_PATH}
+  				,#{LIST_SEQ}
+  			)
+  			
+  		</insert>
+  		
+  	<select id="maxSeq" resultType="int">
+  			select nvl(max(seq),0)+1 from board_study
+  		</select>	
+  		
+	<update id="update" parameterType="map" >
+	 update board_study set
+	 	mem_id = #{mem_id}
+	 	,mem_name = #{mem_name}
+		,board_subject = #{board_subject}
+		,board_content = #{board_content}
+	 	,upt_date = sysdate
+		where seq = #{seq}
+	</update>
+	
+	
+	<update id="updatereviewcnt">
+		update board_study set view_cnt = view_cnt + 1 where seq = #{seq}
+	</update>
+	
+	<delete id="selectdelete" parameterType="int">
+		delete from 
+		board_study
+		where seq = #{seq}
+	</delete>
+
+ 
+ 
+  <select id="total" parameterType="map" resultType="int">
+  			select count(seq) from board_study
+  			where 1=1
+				<if test="searchType != null and searchType != ''">
+					and ${searchType} like '%'||#{searchTxt}||'%'
+				</if>
+				<if test="stDate != null and stDate != ''">
+					and to_char(reg_date, 'yyyy-MM-dd') between  #{stDate} and #{endDate}
+				</if>
+  </select>
+ 
+
+	<select id="detail" resultMap="maplist">
+  		
+  			select
+  				SEQ
+				,MEM_NAME
+				,MEM_ID
+				,BOARD_SUBJECT
+				,BOARD_CONTENT
+				,REG_DATE
+				,UPT_DATE
+				,VIEW_CNT
+			from board_study
+			where seq = #{seq}
+  		</select>
+  		
+  		
+  		<select id="detail2" resultType ="map">
+  		
+  			select
+  				FILE_SEQ
+				,REAL_NAME
+				,SAVE_NAME
+				,SAVE_PATH
+				,LIST_SEQ
+				
+			from file_study_table
+			where LIST_SEQ = #{seq}
+  		</select>
+
+  		
+
+  		
+  		
+</mapper>
